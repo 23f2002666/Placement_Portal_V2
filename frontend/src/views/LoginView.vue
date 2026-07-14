@@ -1,72 +1,73 @@
 <template>
-<div class="container d-flex justify-content-center align-items-center" style="height:80vh;">
+  <div class="login-page">
     
-    <!-- The Card Container from Code 2 -->
-    <div class="card shadow p-4" style="width:350px; border-radius:12px;">
-        
-        <!-- Header with Emoji -->
-        <h3 class="text-center mb-4">🔐 Login</h3>
-
-        <!-- Keep Vue's @submit.prevent -->
-        <form @submit.prevent="login">
-
-            <!-- Email Input -->
-            <div class="mb-3">
-                <label class="form-label">Email address</label>
-                <input 
-                    type="email" 
-                    class="form-control" 
-                    placeholder="Enter email"
-                    v-model="email" 
-                    required
-                >
-            </div>
-
-            <!-- Password Input with your validation logic -->
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                <input 
-                    type="password" 
-                    class="form-control" 
-                    placeholder="Enter password"
-                    v-model="password" 
-                    @input="validatePassword" 
-                    required
-                >
-                <!-- Vue Validation Message -->
-                <div v-if="passwordError" class="form-text text-danger" style="font-size: 0.8rem;">
-                    {{ passwordError }}
-                </div>
-            </div>
-
-            <!-- Full-width Button using d-grid -->
-            <div class="d-grid">
-                <button class="btn btn-primary" type="submit">Login</button>
-            </div>
-
-        </form>
-        
-        <!-- Optional: Link to Register since it's a Portal -->
-        <div class="text-center mt-3">
-            <small>Don't have an account? <router-link to="/register">Register</router-link></small>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4 border-bottom border-secondary">
+      <div class="container-fluid">
+        <router-link to="/" class="navbar-brand fw-bold fs-4">
+          Placement Portal
+        </router-link>
+        <div class="ms-auto d-flex gap-2">
+          <router-link to="/" class="btn btn-success btn-sm px-3">Home</router-link>
+          <router-link to="/register" class="btn btn-success btn-sm px-3">Register</router-link>
         </div>
+      </div>
+    </nav>
 
+    <div class="login-container d-flex align-items-center justify-content-center">
+      <div class="card shadow-lg border-0 p-4" style="width: 400px; border-radius: 15px;">
+        <div class="card-body">
+          <h2 class="text-center mb-4 fw-normal">🔐 Login</h2>
+          <form @submit.prevent="login">
+            <div class="mb-3 text-start">
+              <label class="form-label text-secondary small mb-1">Username</label>
+              <input 
+                type="email" 
+                class="form-control form-control-lg fs-6" 
+                placeholder="Enter username"
+                v-model="email" 
+                required
+              >
+            </div>
+
+            <div class="mb-4 text-start">
+              <label class="form-label text-secondary small mb-1">Password</label>
+              <input 
+                type="password" 
+                class="form-control form-control-lg fs-6" 
+                placeholder="Enter password"
+                v-model="password" 
+                @input="validatePassword" 
+                required
+              >
+              <div v-if="passwordError" class="form-text text-danger tiny">
+                {{ passwordError }}
+              </div>
+            </div>
+
+            <div class="d-grid">
+              <button class="btn btn-primary btn-lg fs-6 fw-bold" type="submit">
+                Login
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
-</div>
-
+  </div>
 </template>
 
 <script setup>
 import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const email = ref('');
 const password = ref('');
-
 const passwordError = ref('');
 
 const validatePassword = () => {
     if (password.value.length < 8) {
-        passwordError.value = 'Password must be at least 8 characters long.';
+        passwordError.value = 'Minimum 8 characters required.';
         return false;
     } else {
         passwordError.value = '';
@@ -74,45 +75,62 @@ const validatePassword = () => {
     }
 };
 
-
-
 async function login() {
-    if (!validatePassword()) {
-        alert('Invalid password length.');
-        return;
-    }
+    if (!validatePassword()) return;
     
-    if (email.value === '' || password.value === '') {
-        alert('Please fill in all fields.');
-        return;
-    }
+    try {
+        const response = await fetch('http://127.0.0.1:5000/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email.value, password: password.value })
+        });
 
-    const response= await fetch('http://127.0.0.1:5000/api/login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            email: email.value,
-            password: password.value
-        })
-    });
-    
-    console.log(response);
-
-    if (!response.ok) {
         const data = await response.json();
-        console.error('Login failed:', data.message);
-        alert('Login failed: ' + data.message);
-    
-    }else{
-        const data = await response.json();
-        console.log('Login successful:', data);
 
-        localStorage.setItem('token', data.user.auth_token);
-        alert(data.message);
-        return;
+        if (response.ok) {
+            localStorage.setItem('auth_token', data.user.auth_token);
+            const userRole = data.user.roles[0];
+            localStorage.setItem('user_role', userRole);
+
+            if (userRole === 'admin') router.push('/admin');
+            else if (userRole === 'company') router.push('/company');
+            else if (userRole === 'student') router.push('/student');
+            
+            alert("Success!");
+        } else {
+            alert('Login failed: ' + data.message);
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("Could not connect to the server.");
     }
 }
-
 </script>
+
+<style scoped>
+.login-page {
+  background: radial-gradient(circle, #4d4d4d 0%, #1a1a1a 100%);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.login-container {
+  flex-grow: 1;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border: none;
+  padding: 12px;
+}
+
+.btn-success {
+  background-color: #198754;
+  border: none;
+}
+
+.tiny {
+  font-size: 0.75rem;
+}
+</style>
