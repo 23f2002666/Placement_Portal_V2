@@ -14,7 +14,7 @@ const routes = [
     {
     path: '/',
     name: 'home',
-    component: HomeView // <--- Make sure this points to the file where you pasted my code
+    component: HomeView 
   },
   {
     path: '/student/profile',
@@ -27,7 +27,7 @@ const routes = [
     path: '/admin', 
     component: AdminDashboard,
     beforeEnter: (to, from, next) => {
-      // Security: Only let admins in
+      
       localStorage.getItem('user_role') === 'admin' ? next() : next('/login')
     }
   },
@@ -46,7 +46,7 @@ const routes = [
     }
   },
   { path: '/search', component: AllDrives },
-  { path: '/', redirect: '/login' } // Default page
+  { path: '/', redirect: '/login' } 
 ]
 
 const router = createRouter({
